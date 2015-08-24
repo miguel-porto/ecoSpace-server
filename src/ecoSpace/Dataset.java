@@ -75,13 +75,7 @@ public class Dataset {
              super(message);
           }
     }
-
-/*	public Dataset() {
-		isProcessed=false;
-		State=DATASETSTATE.EMPTY;
-		dID=UUID.randomUUID().toString().substring(30);
-	}*/
-    
+   
 	/**
 	 * Gets the textual description of this dataset
 	 * @return
