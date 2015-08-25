@@ -10,7 +10,7 @@ import java.net.Socket;
 public class EcoSpace {
 	public static void main( final String[] args ) throws InterruptedException {
 		int maxAttemps=100;
-		StartServer();
+		//StartServer();
 		if(args.length<1) {
 			System.out.println("Expected arguments start | stop | direct");
 			return;
