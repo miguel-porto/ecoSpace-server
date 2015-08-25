@@ -11,12 +11,12 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -121,7 +121,7 @@ public class ServerDispatch implements Runnable{
         	BasicLineParser blp=new BasicLineParser();
         	RequestLine requestline=BasicLineParser.parseRequestLine(line,blp);
         	URI url=new URIBuilder(requestline.getUri()).build();
-        	List<NameValuePair> qs=URLEncodedUtils.parse(url,Charset.defaultCharset().toString());
+        	List<NameValuePair> qs=URLEncodedUtils.parse(url.toString(),StandardCharsets.UTF_8);
 //    		curl -G 'localhost:7530/adddataset/dwc' --data-urlencode "url=http://flora-on.pt:8080/ipt/archive.do?r=flora-on" --data-urlencode "desc=Plantas do Flora-On"
 
     		String[] path=url.getPath().split("/");
@@ -464,7 +464,7 @@ public class ServerDispatch implements Runnable{
     				
     				ds=datasetServer.datasets.get(dID);
     				if(ds==null) {out.println(error("Dataset not found.",fmt));break;}
-    				
+
     				QueryService qserv=null;
     				try {
     					qserv=QueryServiceFactory.newQueryService(queryType, query);
@@ -474,6 +474,7 @@ public class ServerDispatch implements Runnable{
     				}
     				
     				processedQuery=qserv.executeQuery();
+
     				if(fmt.equals("html") && processedQuery.length>1) {out.println("<p style=\"visibility:hidden\">Requests in HTML format must be single-species queries.</p>");break;}
 
     				taxonids=ds.taxonNames.parseQuery(processedQuery).toArray(taxonids);

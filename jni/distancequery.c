@@ -276,15 +276,12 @@ JNIEXPORT jstring JNICALL Java_ecoSpace_nativeFunctions_getRelationships(JNIEnv 
 		int tmpfd;
 		char template2[100];
 		strcpy(template2,"/tmp/treeXXXXXX");
-//		char tmpfile[L_tmpnam+20];
 		FILE *treeout=0;
 		void *dummy;
 		do {
 			tmpfd=mkstemp(template2);
 			printf("%s ********************\n",template2);
 			treeout=fdopen(tmpfd,"wx");
-//			dummy=tmpnam(tmpfile);
-//			treeout=fopen(tmpfile,"wx");
 		} while(!treeout);
 		int maxid=0;
 		for(j=0;j<nodes.nnodes;j++) {
@@ -320,7 +317,7 @@ JNIEXPORT jstring JNICALL Java_ecoSpace_nativeFunctions_getRelationships(JNIEnv 
 
 //		int ret=system("/home/miguel/Infomap/Infomap '/home/miguel/workspace/ecoSpace/jni/tree.pajek' -ipajek /home/miguel/workspace/ecoSpace/jni --directed --tree");
 		char cmdbuf[100];
-		sprintf(cmdbuf,"./Infomap '%s' -ipajek /tmp -N5 --directed --tree",template2);
+		sprintf(cmdbuf,"./Infomap '%s' -ipajek /tmp -N2 --directed --tree",template2);
 		int trycount=0,ret;
 		
 		while(ret=system(cmdbuf)) {

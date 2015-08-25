@@ -3,10 +3,13 @@ package ecoSpace;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -42,7 +45,8 @@ public class ExternalQueryService implements QueryService {
 		URI uri;
 		StringBuilder resp;
 		try {
-			uri = new URI("http",this.domain,this.path,this.qparam+"="+this.query+"&"+this.addparams,null);
+			
+			uri = new URI("http",this.domain,this.path,this.qparam+"="+URLEncoder.encode(this.query, StandardCharsets.UTF_8.toString())+"&"+this.addparams,null);
 			URL website = uri.toURL();
 			URLConnection yc = website.openConnection();
 			BufferedReader in1 = new BufferedReader(new InputStreamReader(yc.getInputStream()));
