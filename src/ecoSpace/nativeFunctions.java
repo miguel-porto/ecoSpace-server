@@ -55,10 +55,11 @@ public class nativeFunctions {
 	}
 	
 	public static String getQSValue(String key,List<NameValuePair> qs) {
+		if(qs==null) return null;
 		for(NameValuePair i:qs) {
 			if(i.getName().equals(key)) return(i.getValue());
 		}
-		return(null);
+		return null;
 	}
 // from http://stackoverflow.com/questions/13592236/parse-the-uri-string-into-name-value-collection-in-java	
 	public static Map<String, String> splitQuery(String query) throws UnsupportedEncodingException {

@@ -11,7 +11,6 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.SocketException;
@@ -121,13 +120,14 @@ public class ServerDispatch implements Runnable{
         	BasicLineParser blp=new BasicLineParser();
         	RequestLine requestline=BasicLineParser.parseRequestLine(line,blp);
         	URI url=new URIBuilder(requestline.getUri()).build();
-        	List<NameValuePair> qs=URLEncodedUtils.parse(url.toString(),StandardCharsets.UTF_8);
-//    		curl -G 'localhost:7530/adddataset/dwc' --data-urlencode "url=http://flora-on.pt:8080/ipt/archive.do?r=flora-on" --data-urlencode "desc=Plantas do Flora-On"
+        	List<NameValuePair> qs=null;
+        	if(url.getQuery()!=null) qs=URLEncodedUtils.parse(url.getRawQuery().toString(),StandardCharsets.UTF_8);
+
+        	//    		curl -G 'localhost:7530/adddataset/dwc' --data-urlencode "url=http://flora-on.pt:8080/ipt/archive.do?r=flora-on" --data-urlencode "desc=Plantas do Flora-On"
 
     		String[] path=url.getPath().split("/");
     		if(path.length==0) {out.println(errorMsg("Missing command."));return;}
     		switch(path[1]) {
-    			
     		case "stop":
     			thr.stop(out);
     			break;
@@ -448,7 +448,6 @@ public class ServerDispatch implements Runnable{
     				query=getQSValue("q",qs);	// this is a query that is sent as is to an external web service or local file
     				queryType=getQSValue("t",qs);	// this is either a taxon name or taxon ID query that is only searched internally
     				String makeClusters=getQSValue("cls",qs);
-
     				String nnei=getQSValue("nn",qs);
     				String nlev=getQSValue("lev",qs);
     				String tmp2=getQSValue("sec",qs);
@@ -484,7 +483,7 @@ public class ServerDispatch implements Runnable{
 					}
     				
 					String resp=null;
-					
+
 					try {
 						resp = datasetServer.Query(dID,aID,taxonids
 								,Integer.parseInt(nnei),Integer.parseInt(nlev),loadSecondary
@@ -525,7 +524,7 @@ public class ServerDispatch implements Runnable{
 						tmpo=null;
 						for(Object o:nodes) {
 							tmpo=(JSONObject)o;
-							if(Integer.parseInt(tmpo.get("or").toString())==1) break;
+							if(Integer.parseInt(tmpo.get("ori").toString())==1) break;
 						}
 						if(tmpo==null) {out.println(error("Unexpected error in processing: probably no relations found for queried species.",fmt));break;}
 						
@@ -534,7 +533,7 @@ public class ServerDispatch implements Runnable{
 						Map<String,Float> tmpmap=new HashMap<String,Float>();
 						for(Object l:links) {	// get only the nodes with direct links (so, ignore order>1)
 							tmpo=(JSONObject)l;
-							if(Integer.parseInt(tmpo.get("sourceid").toString())==idroot) tmpmap.put(ds.taxonNames.get(Integer.parseInt(tmpo.get("targetid").toString())),Float.parseFloat(tmpo.get("s").toString())); 
+							if(Integer.parseInt(tmpo.get("sourceid").toString())==idroot) tmpmap.put(ds.taxonNames.get(Integer.parseInt(tmpo.get("targetid").toString())),Float.parseFloat(tmpo.get("wei").toString())); 
 						}
 						// sort species by link weight
 						TreeMap<String,Float> sortedMap = new TreeMap<String,Float>(new ValueComparator(tmpmap));
@@ -842,7 +841,7 @@ public class ServerDispatch implements Runnable{
     	    			out.flush();
     				} else {
 	    				String qs1="?did="+dID+"&amp;q="+tmp2.substring(1, tmp2.length()-1).replace(" ", "")+"&amp;x="+nwid+"&amp;y="+nhei+"&amp;v=longitude,latitude&amp;m="+margin+"&amp;r="+red+"&amp;g="+green+"&amp;b="+blue+"&amp;sig="+sigma+"&amp;nc="+nclasses;
-	    				out.print("<image xlink:href=\"http://localhost/ecospace/density-map.php"+qs1+"\" x=\""+imgx+"\" y=\""+(-imgy)+"\" width=\""+imgwid+"\" height=\""+imghei+"\"/>");
+	    				out.print("<image xlink:href=\"http://flora-on.pt/ecospace/density-map.php"+qs1+"\" x=\""+imgx+"\" y=\""+(-imgy)+"\" width=\""+imgwid+"\" height=\""+imghei+"\"/>");
     				}
     			} else {
     				out.print("<text x=\""+((minlng+maxlng)/2)+"\" y=\""+(-((minlat+maxlat)/2))+"\" style=\"fill:black;font-size:"+((maxlng-minlng+buffer*2)/20)+"px;text-anchor:middle;\">"+error+"</text>");

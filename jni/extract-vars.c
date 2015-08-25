@@ -6,9 +6,11 @@
 #include <limits.h>
 #include "tiff-4.0.3/libtiff/tiffio.h"
 #include "econav.h"
-#define SIGMA		10.f
+#define SIGMA		10.f		// this is the Sigma for the downweighting algorithm
 #define LENGTHGAU	50			// this is the length of the array containing the downweighting gaussian
 #define COORDSCALE	0.1f		// this is the geographic size (in lat long) of the array containing the downweighting gaussian
+
+//#define OUTPUTRAWVARIABLEFILE		// the raw variable values are curently not used, so we do not output this file
 
 JNIEXPORT jint JNICALL Java_ecoSpace_nativeFunctions_readVariablesFromCoords(JNIEnv *env, jclass obj, jfloatArray lat, jfloatArray lng, jintArray IDs,jint ntaxa, jstring _dID) {
 /* this function reads the values of each TIF file at each passed coordinate, and writes a binary file with that table.
@@ -43,12 +45,13 @@ JNIEXPORT jint JNICALL Java_ecoSpace_nativeFunctions_readVariablesFromCoords(JNI
 		variables[i].max=-1000000;
 	}
 
+#ifdef OUTPUTRAWVARIABLEFILE
 	outfile=fopen(VARIABLEFILE(dID),"w");
-	outstd=fopen(STANDARDVARIABLEFILE(dID),"w");	
-
 	fwrite(&nrecs,sizeof(jsize),1,outfile);
 	fwrite(&ntaxa,sizeof(jint),1,outfile);
 	fwrite(&nfiles,sizeof(int),1,outfile);
+#endif
+	outstd=fopen(STANDARDVARIABLEFILE(dID),"w");	
 	fwrite(&nrecs,sizeof(jsize),1,outstd);
 	fwrite(&ntaxa,sizeof(jint),1,outstd);
 	fwrite(&nfiles,sizeof(int),1,outstd);
@@ -63,18 +66,19 @@ JNIEXPORT jint JNICALL Java_ecoSpace_nativeFunctions_readVariablesFromCoords(JNI
 				prev=pIDs[i];
 			}
 		}
+#ifdef OUTPUTRAWVARIABLEFILE
 		fwrite(indID,sizeof(long),ntaxa,outfile);
-		fwrite(indID,sizeof(long),ntaxa,outstd);
-		//for(i=0;i<ntaxa;i++) printf("%d %ld;",i,indID[i]);
-
 		fwrite(pIDs,sizeof(jint),nrecs,outfile);	// taxon ID array for all records
 		fwrite(plat,sizeof(jfloat),nrecs,outfile);
 		fwrite(plng,sizeof(jfloat),nrecs,outfile);
+#endif
+		fwrite(indID,sizeof(long),ntaxa,outstd);
 		fwrite(pIDs,sizeof(jint),nrecs,outstd);
 		fwrite(plat,sizeof(jfloat),nrecs,outstd);
 		fwrite(plng,sizeof(jfloat),nrecs,outstd);
 
-// compute a weight for each record such that records of the same species in the same place are downweighted
+// RECORD DOWNWEIGHTING
+// compute a weight for each record such that records of the same species in the same place are downweighted, e.g. 2 records with the same coordinates account for 0.5 each
 		printf("Computing weight for each record...");
 		unsigned long *weight=calloc(nrecs,sizeof(long));
 		unsigned long norm[LENGTHGAU];
@@ -116,7 +120,9 @@ JNIEXPORT jint JNICALL Java_ecoSpace_nativeFunctions_readVariablesFromCoords(JNI
 		}
 		printf("Total # records: %d, # of equivalent records: %lu\n",nrecs,weisum/MULTIPLIER);
 		fflush(stdout);
+#ifdef OUTPUTRAWVARIABLEFILE
 		fwrite(weight,sizeof(long),nrecs,outfile);
+#endif
 		fwrite(weight,sizeof(long),nrecs,outstd);
 		
 		free(weight);
@@ -173,8 +179,10 @@ JNIEXPORT jint JNICALL Java_ecoSpace_nativeFunctions_readVariablesFromCoords(JNI
 		}
 		printf("%d ",i+1);
 		fflush(stdout);
-
+		
+#ifdef OUTPUTRAWVARIABLEFILE
 		fwrite(tmpv,sizeof(VARIABLE),nrecs,outfile);
+#endif
 // range-standardize	
 		range=variables[i].max-variables[i].min;
 		factor=range/9999;
@@ -194,8 +202,6 @@ JNIEXPORT jint JNICALL Java_ecoSpace_nativeFunctions_readVariablesFromCoords(JNI
 		sprintf(buf,"longitude\t%f\t%f\n",vlng.min,vlng.max);
 		fputs(buf,varindex);
 		for(i=0;i<nfiles && tiffiles[i].filename;i++) {	// write variable file names (TIFF file names)
-	/*		fwrite(tiffiles[i].filename,sizeof(tiffiles[i].filename),1,outfile);
-			fwrite(tiffiles[i].filename,sizeof(tiffiles[i].filename),1,outstd);*/
 			sprintf(buf,"%s\t%f\t%f\n",tiffiles[i].filename,variables[i].min,variables[i].max);
 			fputs(buf,varindex);
 		}
@@ -205,7 +211,9 @@ JNIEXPORT jint JNICALL Java_ecoSpace_nativeFunctions_readVariablesFromCoords(JNI
 	(*env)->ReleaseFloatArrayElements(env, lat, plat, 0);
 	(*env)->ReleaseFloatArrayElements(env, lng, plng, 0);
 	(*env)->ReleaseIntArrayElements(env, IDs, pIDs, 0);
+#ifdef OUTPUTRAWVARIABLEFILE
 	fclose(outfile);
+#endif
 	fclose(outstd);
 	free(tmpv);
 	free(stdlat);

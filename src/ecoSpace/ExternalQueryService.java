@@ -3,7 +3,6 @@ package ecoSpace;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -45,7 +44,6 @@ public class ExternalQueryService implements QueryService {
 		URI uri;
 		StringBuilder resp;
 		try {
-			
 			uri = new URI("http",this.domain,this.path,this.qparam+"="+URLEncoder.encode(this.query, StandardCharsets.UTF_8.toString())+"&"+this.addparams,null);
 			URL website = uri.toURL();
 			URLConnection yc = website.openConnection();
