@@ -113,18 +113,15 @@ public class ServerDispatch implements Runnable{
 			e1.printStackTrace();
 		}
         try(PrintWriter out = new PrintWriter(new OutputStreamWriter(ostr, StandardCharsets.UTF_8), true);BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));) {
-            //PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
         	String line=in.readLine();
         	if(line.equals("stop")) {
         		thr.stop(out);
         		return;
         	}
         	BasicLineParser blp=new BasicLineParser();
-//System.out.println(line);
         	RequestLine requestline=BasicLineParser.parseRequestLine(line,blp);
         	URI url=new URIBuilder(requestline.getUri()).build();
         	List<NameValuePair> qs=URLEncodedUtils.parse(url,Charset.defaultCharset().toString());
-//    		for(i=0;i<qs.size();i++) System.out.println(qs.get(i));
 //    		curl -G 'localhost:7530/adddataset/dwc' --data-urlencode "url=http://flora-on.pt:8080/ipt/archive.do?r=flora-on" --data-urlencode "desc=Plantas do Flora-On"
 
     		String[] path=url.getPath().split("/");
