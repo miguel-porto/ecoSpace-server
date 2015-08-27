@@ -106,10 +106,10 @@ JNIEXPORT jint JNICALL Java_ecoSpace_nativeFunctions_computeKernelDensities(JNIE
 	tmpdens=malloc(arraysize*sizeof(float));
 	memset(tmpdens,0,arraysize*sizeof(float));
 
-	printf("Computing kernel densities...\nTaxon ");
-	for(i=0;i<nrecs;i++) {	// iterate through all records NOTE: records must be sorted by taxon ID
+	printf("Computing kernel densities");
+	for(i=0;i<nrecs;i++) {	// iterate through all records IMPORTANT: records must be sorted by taxon ID
 		if(freqs[pIDs[i]]>=freqthresh) {
-			if(pIDs[i]!=lastID) {
+			if(pIDs[i]!=lastID) {	// tyhis record is already a different species
 				if(anythingtosave) {
 					saveKernelDensity(tmpdens,freqs[lastID],&densities[mapIDs[lastID]]);		// save kernel density of previous taxon
 					outIDs[mapIDs[lastID]]=lastID;
@@ -117,7 +117,7 @@ JNIEXPORT jint JNICALL Java_ecoSpace_nativeFunctions_computeKernelDensities(JNIE
 				anythingtosave=false;
 				memset(tmpdens,0,arraysize*sizeof(float));
 				lastID=pIDs[i];
-				printf("%d ",lastID);
+				printf(".");
 				fflush(stdout);
 			}
 // scale the variables to the size of the grid
@@ -137,7 +137,6 @@ JNIEXPORT jint JNICALL Java_ecoSpace_nativeFunctions_computeKernelDensities(JNIE
 					
 					for(d1=d1from,d1kern=vararray[i]-kernelhalfside<0 ? kernelhalfside-vararray[i] : 0;d1<d1to;d1++,d1kern++) {
 						tmpdens[d1]+=kernel[d1kern] * (downweight ? ((float)weight[i]/MULTIPLIER) : 1);
-//						printf("%f %lu %f\n",kernel[d1kern],weight[i],kernel[d1kern] * ((float)weight[i]/MULTIPLIER));
 					}
 					anythingtosave=true;
 				break;

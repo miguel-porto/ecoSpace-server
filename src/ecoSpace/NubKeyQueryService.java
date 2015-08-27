@@ -8,6 +8,6 @@ public class NubKeyQueryService implements QueryService {
 
 	@Override
 	public String[] executeQuery() {
-		return DatasetIndex.getSpeciesFromNub(this.query.split(","));
+		return GlobalOperations.getSpeciesFromNub(this.query.split(","));
 	}
 }

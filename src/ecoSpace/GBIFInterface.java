@@ -38,9 +38,9 @@ class GBIFInterface extends DataInterface {
 		}
 		State=DATASETSTATE.WAITING_FILE;
 
-		Element el=DatasetIndex.GetDataset(super.tmpID);
+		Element el=GlobalOperations.getDataset(super.tmpID);
 		el.setAttribute("GBIFfileKey", FileKey);
-		DatasetIndex.WriteXML();
+		GlobalOperations.updateXML();
 
 		if(!GBIFFileKeyInterface.waitForFile(FileKey, super.tmpID)) {
 			State=DATASETSTATE.ERROR;
@@ -93,10 +93,13 @@ class GBIFInterface extends DataInterface {
 		predicate.put("type", "and");
 		predicate.put("predicates", predicates);
 		req.put("predicate",predicate);
-		System.out.println(req.toJSONString());
 
+		// read gbif user account from external file
+		String[] account=GlobalOperations.getGBIFAccount();
+		
+		System.out.println("Using GBIF account for user "+account[0]);
 		URL url = new URL ("http://api.gbif.org/v1/occurrence/download/request");
-		String encoding = Base64.encodeBase64String("USERNAME:PASSWORD".getBytes());	// YOU MUST WRITE YOUR GBIF ACCOUNT HERE
+		String encoding = Base64.encodeBase64String((account[0]+":"+account[1]).getBytes());
 		
 		HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 		connection.setRequestMethod("POST");
@@ -107,9 +110,7 @@ class GBIFInterface extends DataInterface {
 		connection.setRequestProperty("Accept","application/json");
 		
 		//Send request
-		
 		DataOutputStream wr = new DataOutputStream (connection.getOutputStream ());
-		//6635 cistaceae
 		wr.writeBytes (req.toJSONString());
 		wr.flush();
 		wr.close();

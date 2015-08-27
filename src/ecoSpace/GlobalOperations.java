@@ -36,15 +36,20 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import ecoSpace.Dataset.Analysis;
-
-public final class DatasetIndex {
+/**
+ * Performs assorted global operations related with server initialization, species nubKey queries, dataset registration in the XML index file
+ * @author Miguel Porto
+ *
+ */
+public final class GlobalOperations {
 	private static Document XMLIndex;
 	private static Map<String,Long> species=new HashMap<String,Long>();
 	private static BufferedWriter speciesNameWriter;
 	/**
 	 * Opens the XML dataset index and the species list with respective nubKeys
+	 * Must be called upon server startup
 	 */
-	public DatasetIndex() {
+	public GlobalOperations() {
 		File xml=new File("datasets.xml");
 		try {
 			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
@@ -63,7 +68,7 @@ public final class DatasetIndex {
 			BufferedReader br=new BufferedReader(new FileReader(spfile));
 			while((line=br.readLine())!=null) {
 				spl=line.split("\t");
-				DatasetIndex.species.put(spl[0], Long.parseLong(spl[1]));
+				GlobalOperations.species.put(spl[0], Long.parseLong(spl[1]));
 			}
 			br.close();
 		} catch (FileNotFoundException e) {
@@ -83,12 +88,12 @@ public final class DatasetIndex {
 	}
 	
 	/**
-	 * Gets the species species name for the given nubKey. Silently ignores if not found.
+	 * Gets the species name for the given nubKey. Silently ignores if not found.
 	 * @param nubKey The GBIF nubKey.
 	 * @return The species canonical name
 	 */
 	public static String getSpeciesFromNub(Long nubKey) {
-		for(Entry<String,Long> e: DatasetIndex.species.entrySet()) {
+		for(Entry<String,Long> e: GlobalOperations.species.entrySet()) {
 			if(e.getValue().equals(nubKey)) return e.getKey();
 		}
 		return null;
@@ -102,7 +107,7 @@ public final class DatasetIndex {
 	public static String[] getSpeciesFromNub(Long[] nubs) {
 		String[] out=new String[nubs.length];
 		for(int i=0;i<nubs.length;i++) {
-			for(Entry<String,Long> e: DatasetIndex.species.entrySet()) {
+			for(Entry<String,Long> e: GlobalOperations.species.entrySet()) {
 				if(e.getValue().equals(nubs[i])) {
 					out[i]=e.getKey();
 					break;
@@ -119,7 +124,7 @@ public final class DatasetIndex {
 	public static String[] getSpeciesFromNub(String[] nubs) {
 		String[] out=new String[nubs.length];
 		for(int i=0;i<nubs.length;i++) {
-			for(Entry<String,Long> e: DatasetIndex.species.entrySet()) {
+			for(Entry<String,Long> e: GlobalOperations.species.entrySet()) {
 				if(e.getValue().equals(Long.parseLong(nubs[i]))) {
 					out[i]=e.getKey();
 					break;
@@ -136,15 +141,28 @@ public final class DatasetIndex {
 	public static Long[] getNubFromSpecies(String[] species) {
 		Long[] out=new Long[species.length];
 		for(int i=0;i<species.length;i++) {
-			out[i]=DatasetIndex.species.get(species[i]);
+			out[i]=GlobalOperations.species.get(species[i]);
 		}
 		return out;
 	}
 
 	public static Long getNubFromSpecies(String species) {
-		return DatasetIndex.species.get(species);
+		return GlobalOperations.species.get(species);
 	}
 
+	/**
+	 * Gets the GBIF user account details that are in the file gbif_account.txt. File must be a 2-line text file. username goes in the 1st line, password on the 2nd.
+	 * @return An array [username,password]
+	 */
+	public static String[] getGBIFAccount() throws IOException {
+		File account=new File("gbif_account.txt");
+		if(!account.canRead()) throw new IOException("Cannot perform GBIF queries without a user account.");
+		BufferedReader fr=new BufferedReader(new FileReader(account));
+		String username=fr.readLine();
+		String pass=fr.readLine();
+		fr.close();
+		return new String[]{username,pass};
+	}
 	/**
 	 * Adds a species to the species list if it doesn't exist already, and gets its nubKey from GBIF.
 	 * @param name Species canonical name
@@ -152,7 +170,7 @@ public final class DatasetIndex {
 	 * @throws IOException
 	 */
 	public static Long addSpecies(String name) throws IOException {
-		Long nubKey=DatasetIndex.species.get(name);
+		Long nubKey=GlobalOperations.species.get(name);
 		if(nubKey!=null) return nubKey;
 		
 		JSONArray res;
@@ -188,7 +206,7 @@ public final class DatasetIndex {
 	 * @return The nubKey
 	 */
 	public static Long getSpeciesNub(String name) {
-		return DatasetIndex.species.get(name);
+		return GlobalOperations.species.get(name);
 	}
 	/**
 	 * Adds a new analysis to the XML index. Does not check if it is repeated (that check has been done before).
@@ -201,7 +219,7 @@ public final class DatasetIndex {
 		an.setAttribute("minfreq", analysis.getMinFrequency().toString());
 		an.setAttribute("sigmaPercent",analysis.getSigmaPercent().toString());
 		an.setAttribute("downWeight",analysis.getDownWeight().toString());
-		GetDataset(analysis.getDatasetID()).appendChild(an);
+		getDataset(analysis.getDatasetID()).appendChild(an);
 	}
 	
 	public static void addDataset(String dID,String origin,String description,String url) {
@@ -249,7 +267,7 @@ public final class DatasetIndex {
 	 */
 	public static String findAnalysis(String dID,Integer[] variables,Integer min_freq,Float sigmaPercent,Boolean downweight) {
 		int i;
-		Element ds=GetDataset(dID),an;
+		Element ds=getDataset(dID),an;
 		if(ds!=null) {
 			NodeList analyses=ds.getElementsByTagName("analysis");
 			for(i=0;i<analyses.getLength();i++) {
@@ -274,17 +292,17 @@ public final class DatasetIndex {
 		throw new IOException("Variable not found");
 	}
 	
-	public static Node GetRoot() {
+	public static Node getRoot() {
 		return(XMLIndex.getElementsByTagName("datasets").item(0));
 	}
-	public static NodeList GetDatasets() {
+	public static NodeList getDatasets() {
 		return(XMLIndex.getElementsByTagName("dataset"));	
 	}
-	public static NodeList GetVariables() {
+	public static NodeList getVariables() {
 		return(XMLIndex.getElementsByTagName("variable"));
 	}
 	
-	public static Element GetDataset(String dID) {
+	public static Element getDataset(String dID) {
 		int i;
 		NodeList ds=XMLIndex.getElementsByTagName("dataset");
 		for(i=0;i<ds.getLength();i++) {
@@ -294,7 +312,7 @@ public final class DatasetIndex {
 	}
 
 	public static Element getAnalysis(String dID,String aID) {
-		Element ds=GetDataset(dID);
+		Element ds=getDataset(dID);
 		if(ds==null) return(null);
 		
 		int i;
@@ -306,36 +324,44 @@ public final class DatasetIndex {
 	}
 	
 	public static void Empty() {
-		NodeList nl=GetDatasets();
+		NodeList nl=getDatasets();
 		List<Node> toremove=new ArrayList<Node>();
 		for(int i=0;i<nl.getLength();i++) toremove.add(nl.item(i));
-		for(Node n:toremove) GetRoot().removeChild(n);
+		for(Node n:toremove) getRoot().removeChild(n);
 	}
 	
 	public static void removeDataset(String dID) {
-		Element ds=GetDataset(dID);
-		if(ds==null) return; else GetRoot().removeChild(ds);
+		Element ds=getDataset(dID);
+		if(ds==null) return; else getRoot().removeChild(ds);
 	}
 
 	public static void removeAnalysis(String dID,String aID) {
 		Element an=getAnalysis(dID,aID);
-		if(an==null) return; else GetDataset(dID).removeChild(an);
+		if(an==null) return; else getDataset(dID).removeChild(an);
 	}
 	
-// authorization keys are used in an individual basis to create new datasets
+	/**
+	 * Check for a valid authorization key. If found, it is destroyed. Authorization keys are used in an individual basis to create new datasets. 
+	 * @param keytocheck
+	 * @return True if valid.
+	 */
 	public static boolean checkAuthorizationKey(String keytocheck) {
 		NodeList key=XMLIndex.getElementsByTagName("authkey");
 		for(int i=0;i<key.getLength();i++) {
 			if(((Element)key.item(i)).getAttribute("key").equals(keytocheck)) {
 				Node parent=XMLIndex.getElementsByTagName("authkeys").item(0);
 				parent.removeChild(key.item(i));
-				WriteXML();
-				return(true);
+				updateXML();
+				return true;
 			}
 		}
-		return(false);
+		return false;
 	}
 	
+	/**
+	 * Creates new authorization key
+	 * @return
+	 */
 	public static String newAuthorizationKey() {
 		NodeList tmp=XMLIndex.getElementsByTagName("authkeys");
 		Element authkeys,newkey;
@@ -347,12 +373,14 @@ public final class DatasetIndex {
 		newkey=XMLIndex.createElement("authkey");
 		newkey.setAttribute("key", key);
 		authkeys.appendChild(newkey);
-		WriteXML();
-		return(key);
+		updateXML();
+		return key;
 	}
 	
-	public static void WriteXML() {
-// output XML file		
+	/**
+	 * Replaces the XML index file with the in-memory index.
+	 */
+	public static void updateXML() {
 		try {
 			TransformerFactory transformerFactory = TransformerFactory.newInstance();
 			Transformer transformer= transformerFactory.newTransformer();
@@ -362,22 +390,15 @@ public final class DatasetIndex {
 		} catch (TransformerException e) {
 			e.printStackTrace();
 		}
-
 	}
 
-	public static String TranslateDatasetState(DATASETSTATE dsst) {
+	/**
+	 * Translates a DATASETSTATE into a human-readable state
+	 * @param dsst
+	 * @return
+	 */
+	public static String translateDatasetState(DATASETSTATE dsst) {
 		if(dsst==null) return("Undefined state");
-		
-		switch(dsst) {
-		case IDLE: return("Idle");
-		case EMPTY: return("Empty dataset");
-		case REQUESTING_FILE: return("Requesting dataset");
-		case WAITING_FILE: return("Waiting for file to be ready for download");
-		case PROCESSING_FILE: return("Processing occurrence file");
-		case READING_VARIABLES: return("Reading variables from coordinates");
-		case ERROR: return("Some error occurred while processing");
-		default: return("Undefined");
-		}
-
+		return dsst.toString();
 	}
 }

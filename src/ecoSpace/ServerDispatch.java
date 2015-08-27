@@ -58,10 +58,6 @@ public class ServerDispatch implements Runnable{
         this.thr=thr;
     }
     
-    private static String errorMsg(String msg) {
-    	return("{\"success\":false,\"msg\":\""+msg+"\"}");
-    }
-
     @SuppressWarnings("unchecked")
 	public static String error(String msg) {
 		JSONObject jobj=new JSONObject();
@@ -86,7 +82,7 @@ public class ServerDispatch implements Runnable{
 	public static String success(String msg) {
 		JSONObject jobj=new JSONObject();
 		jobj.put("success", true);
-		jobj.put("msg", msg);
+		if(msg!=null) jobj.put("msg", msg);
 		return(jobj.toJSONString());
 	}
 	@SuppressWarnings("unchecked")
@@ -108,7 +104,6 @@ public class ServerDispatch implements Runnable{
 		try {
 			ostr = clientSocket.getOutputStream();
 		} catch (IOException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
         try(PrintWriter out = new PrintWriter(new OutputStreamWriter(ostr, StandardCharsets.UTF_8), true);BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));) {
@@ -126,7 +121,7 @@ public class ServerDispatch implements Runnable{
         	//    		curl -G 'localhost:7530/adddataset/dwc' --data-urlencode "url=http://flora-on.pt:8080/ipt/archive.do?r=flora-on" --data-urlencode "desc=Plantas do Flora-On"
 
     		String[] path=url.getPath().split("/");
-    		if(path.length==0) {out.println(errorMsg("Missing command."));return;}
+    		if(path.length==0) {out.println(error("Missing command."));return;}
     		switch(path[1]) {
     		case "stop":
     			thr.stop(out);
@@ -138,8 +133,8 @@ public class ServerDispatch implements Runnable{
     				break;
     			case 3:
     				ds=datasetServer.datasets.get(path[2]);
-    				DatasetIndex.removeDataset(path[2]);
-    				DatasetIndex.WriteXML();
+    				GlobalOperations.removeDataset(path[2]);
+    				GlobalOperations.updateXML();
     				datasetServer.datasets.remove(path[2]);
     				File dir=new File("data/");
     				File[] files=dir.listFiles();
@@ -152,8 +147,8 @@ public class ServerDispatch implements Runnable{
     				break;
     			case 4:
     				ds=datasetServer.datasets.get(path[2]);    				
-    				DatasetIndex.removeAnalysis(path[2],path[3]);
-    				DatasetIndex.WriteXML();
+    				GlobalOperations.removeAnalysis(path[2],path[3]);
+    				GlobalOperations.updateXML();
     				ds.analyses.remove(path[3]);    				
     				File dir1=new File("data/");
     				File[] files1=dir1.listFiles();
@@ -174,7 +169,7 @@ public class ServerDispatch implements Runnable{
     			case 3:
     				ds=datasetServer.datasets.get(path[2]);
     				if(ds!=null)
-    					out.println("{\"success\":true,\"id\":\""+path[2]+"\",\"state\":\""+DatasetIndex.TranslateDatasetState(ds.GetState())+(ds.getProgress()==null ? "" : " "+ds.getProgress()+" records processed.")+"\",\"ready\":"+(ds.GetState()==DATASETSTATE.IDLE ? true : false)+"}");
+    					out.println("{\"success\":true,\"id\":\""+path[2]+"\",\"state\":\""+GlobalOperations.translateDatasetState(ds.GetState())+(ds.getProgress()==null ? "" : " "+ds.getProgress()+" records processed.")+"\",\"ready\":"+(ds.GetState()==DATASETSTATE.IDLE ? true : false)+"}");
     				else
     					out.println("{\"success\":false,\"msg\":\"No such dataset ID\"}");
     				break;
@@ -259,7 +254,7 @@ public class ServerDispatch implements Runnable{
     			}
     			break;
     		case "getvariables":
-    			NodeList varnl=DatasetIndex.GetVariables();
+    			NodeList varnl=GlobalOperations.getVariables();
     			Element tmpel;
     			String html=nativeFunctions.getQSValue("html", qs);
     			if(html==null || html=="0") {
@@ -283,26 +278,28 @@ public class ServerDispatch implements Runnable{
     			break;
     			
     		case "newauthkey":
-    			String pass=nativeFunctions.getQSValue("pass",qs);
-    			if(pass==null || !pass.equals("ravenala")) {out.println(errorMsg("Unauthorized command"));break;}
-    			out.println(DatasetIndex.newAuthorizationKey());
+    			String pass=getQSValue("pass",qs);
+    			String[] account=GlobalOperations.getGBIFAccount();
+    			if(pass==null || !pass.equals(account[1])) {out.println(error("Unauthorized command"));break;}
+    			out.println(success(GlobalOperations.newAuthorizationKey()));
     			break;
     		
     		case "requestauth":
-    			String email=nativeFunctions.getQSValue("email",qs);
-    			String reason=nativeFunctions.getQSValue("reason",qs);
+    			String email=getQSValue("email",qs);
+    			String reason=getQSValue("reason",qs);
     			File req=new File("KeyRequests.txt");
     			BufferedWriter bw=new BufferedWriter(new FileWriter(req,true));
     			bw.write(email+"\t"+reason+"\n");
     			bw.close();
-    			out.println("{\"success\":true}");
+    			out.println(success(null));
     			break;
     			
     		case "adddataset":
-    			/*String authkey=nativeFunctions.getQSValue("auth",qs);
-    			if(authkey==null) {out.println(errorMsg("You have to provide an authorization key as the parameter auth"));break;}
-    			if(!DatasetIndex.checkAuthorizationKey(authkey)) {out.println(errorMsg("Invalid authorization key. Contact administrator to request a key."));break;}*/
-    			if(path.length<3) {out.println(errorMsg("What type of dataset? dwc | gbif | gbifkey"));break;}
+    			String authkey=getQSValue("auth",qs);
+    			if(authkey==null) {out.println(error("You have to provide an authorization key as the parameter auth"));break;}
+    			if(!GlobalOperations.checkAuthorizationKey(authkey)) {out.println(error("Invalid authorization key. Contact administrator to request a key."));break;}
+    			
+    			if(path.length<3) {out.println(error("What type of dataset? dwc | gbif | gbifkey"));break;}
     			switch(path[2]) {
     			case "local":	// for debugging!
     				OccurrenceInterface occ=new OccurrenceInterface("Debug",null);
@@ -370,7 +367,7 @@ public class ServerDispatch implements Runnable{
     					break;
     				}
     				try {
-    					aID=datasetServer.Analyze(dID, varsc, Integer.parseInt(min),Float.parseFloat(sig),Integer.parseInt(dw)==1);
+    					aID=datasetServer.analyze(dID, varsc, Integer.parseInt(min),Float.parseFloat(sig),Integer.parseInt(dw)==1);
     				} catch (IOException e) {
     					out.println(error(e.getMessage()));
     					break;
@@ -506,7 +503,7 @@ public class ServerDispatch implements Runnable{
 						tmpo=(JSONObject)o;
 						tmp=ds.taxonNames.get(Integer.parseInt(tmpo.get("id").toString()));
 						tmpo.put("name", tmp);
-						tmpo.put("nubKey",DatasetIndex.getNubFromSpecies(tmp));
+						tmpo.put("nubKey",GlobalOperations.getNubFromSpecies(tmp));
 					}
 					outj.put("maxfreq", Collections.max(ds.TaxonFrequencies));
 					outj.put("success", true);
@@ -544,9 +541,9 @@ public class ServerDispatch implements Runnable{
 						outwei=sortedMap.values().toArray(outwei);
 						out.print("<p class=\"relatedspecies\">");
 						for(int i2=0;i2<outspp.length-1;i2++) {
-							out.print("<span data-gbifkey=\""+DatasetIndex.getNubFromSpecies(outspp[i2])+"\" data-weight=\""+outwei[i2]+"\">"+outspp[i2]+"</span>, ");
+							out.print("<span data-gbifkey=\""+GlobalOperations.getNubFromSpecies(outspp[i2])+"\" data-weight=\""+outwei[i2]+"\">"+outspp[i2]+"</span>, ");
 						}
-						out.print("<span data-gbifkey=\""+DatasetIndex.getNubFromSpecies(outspp[outspp.length-1])+"\" data-weight=\""+outwei[outwei.length-1]+"\">"+outspp[outspp.length-1]+"</span>");
+						out.print("<span data-gbifkey=\""+GlobalOperations.getNubFromSpecies(outspp[outspp.length-1])+"\" data-weight=\""+outwei[outwei.length-1]+"\">"+outspp[outspp.length-1]+"</span>");
 						out.print("</p>");
 						out.flush();
 						break;
@@ -658,7 +655,7 @@ public class ServerDispatch implements Runnable{
     			break;
     			
     		case "getqueryservices":
-    			NodeList qserv=DatasetIndex.getQueryServices();
+    			NodeList qserv=GlobalOperations.getQueryServices();
     			Element el,el1;
     			NodeList nl;
     			JSONArray jarr=new JSONArray(),examp;

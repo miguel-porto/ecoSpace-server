@@ -17,4 +17,5 @@ data/
 *.so
 *.*~
 *.bak
+jni/gbif_account.txt
 

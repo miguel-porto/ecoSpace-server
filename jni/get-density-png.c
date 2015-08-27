@@ -253,7 +253,7 @@ int main(int argc, char **argv) {
 				}
 			}
 		}
-	} else {
+	} else {	// if more than one ID, merge together all IDs
 		for(j=0;j<ntIDs;j++) {	// taxon loop
 			for(i=indID[tIDs[j]];pIDs[i]==tIDs[j];i++) {	// record loop
 				x=(int)(vararray[i]*factorx)+offset[0];

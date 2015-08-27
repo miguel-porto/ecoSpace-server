@@ -11,6 +11,12 @@ public class EcoSpace {
 	public static void main( final String[] args ) throws InterruptedException {
 		int maxAttemps=100;
 		StartServer();
+
+		/*
+		to convert WorldClim to TIF
+		for f in *.bil; do gdal_translate -of GTiff -co "TFW=YES" -outsize 50% 50% $f ${f%.*}.tif; done
+		*/
+
 		if(args.length<1) {
 			System.out.println("Expected arguments start | stop | direct");
 			return;
@@ -94,25 +100,9 @@ public class EcoSpace {
 		    }
 		}
 			
-		/*
-to convert WorldClim to TIF
-for f in *.bil; do gdal_translate -of GTiff -co "TFW=YES" -outsize 50% 50% $f ${f%.*}.tif; done
-*/
-		//String key=requestData(6635,"POLYGON((-9.78 44.11,-10.17 35.71,4.56 35.08,4.67 44.17,-9.78 44.11))");
-		//String key="0009287-141123120432318";
-		//String file="/tmp/009287-141123120432318.zi";
-		/*String file=waitForDownload(key);
-		simpleDataset ds=unzipAndReadOccurrences(file);*/
-
-/*		File fi=Files.createFile(Paths.get("/home/miguel/exp.txt")).toFile();
-		BufferedWriter bw=new BufferedWriter(new FileWriter(fi));
-		for(simpleDataset.record r:ds.records) {
-			bw.write(r.speciesName+"\n");
-		}
-		bw.close();*/
 	}
 	public static void StartServer() {
-		new DatasetIndex();
+		new GlobalOperations();
 		DatasetServer dss = new DatasetServer();
 		MultiThreadedServer server = new MultiThreadedServer(7530,dss);
 		server.run();

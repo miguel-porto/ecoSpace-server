@@ -9,7 +9,7 @@ public class Species implements Comparable<Species> {
 	
 	public Species(String name) throws IOException {
 		this.name=name;
-		this.nubKey=DatasetIndex.addSpecies(name);
+		this.nubKey=GlobalOperations.addSpecies(name);
 	}
 	
 	public String toString() {

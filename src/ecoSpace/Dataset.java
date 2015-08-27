@@ -45,7 +45,7 @@ public class Dataset {
 				if(tmp.matches("^iid:[0-9]+$"))		// query is an internal taxon ID
 					out.add(Integer.parseInt(tmp.substring(4)));
 				else if(tmp.matches("^[0-9]+$")) {		// query is a plain number, which is assumed to be a GBIF nubKey ID
-					tmp=DatasetIndex.getSpeciesFromNub(Long.parseLong(tmp));
+					tmp=GlobalOperations.getSpeciesFromNub(Long.parseLong(tmp));
 					if(tmp==null) continue; else tmp=tmp.toLowerCase();
 					for(int i1=0;i1<this.size();i1++) {
 						if(this.get(i1).toLowerCase().equals(tmp)) {
@@ -81,19 +81,19 @@ public class Dataset {
 	 * @return
 	 */
 	public String getDescription() {
-		return(DatasetIndex.GetDataset(dID).getElementsByTagName("description").item(0).getTextContent());
+		return(GlobalOperations.getDataset(dID).getElementsByTagName("description").item(0).getTextContent());
 	}
 
 	public String getOrigin() {
-		return DatasetIndex.GetDataset(dID).getAttribute("origin");
+		return GlobalOperations.getDataset(dID).getAttribute("origin");
 	}
 
 	public Integer getNumRecords() {
-		return Integer.parseInt(DatasetIndex.GetDataset(dID).getAttribute("numRecords"));
+		return Integer.parseInt(GlobalOperations.getDataset(dID).getAttribute("numRecords"));
 	}
 
 	public String getUrl() {
-		NodeList tmp=DatasetIndex.GetDataset(dID).getElementsByTagName("url");
+		NodeList tmp=GlobalOperations.getDataset(dID).getElementsByTagName("url");
 		if(tmp.getLength()==0) return null;
 		return(tmp.item(0).getTextContent());
 	}
@@ -169,7 +169,7 @@ public class Dataset {
 			while((tmp=bw.readLine())!=null) {
 				String[] line=tmp.split("\t");
 				String tmp1=line[0].replace(".tif", "");
-				Element var=DatasetIndex.getVariable(tmp1);
+				Element var=GlobalOperations.getVariable(tmp1);
 				Variables.add(new Variable(tmp1,var.getAttribute("title"),var.getAttribute("abbrev"),Float.parseFloat(line[1]),Float.parseFloat(line[2]),Float.parseFloat(var.getAttribute("scale"))));
 			}
 		} catch (IOException e) {
@@ -178,7 +178,7 @@ public class Dataset {
 		}
 		
 //read and open handles for existing analyses
-		Element parent=DatasetIndex.GetDataset(dID);
+		Element parent=GlobalOperations.getDataset(dID);
 		NodeList nl=parent.getElementsByTagName("analysis");
 		Element tmp1;
 		for(int i=0;i<nl.getLength();i++) {
@@ -186,13 +186,13 @@ public class Dataset {
 			Analysis an=new Analysis(tmp1);
 			if(an.State!=ANALYSISSTATE.ERROR) analyses.put(an.aID,an); else parent.removeChild(tmp1);
 		}
-		DatasetIndex.WriteXML();
+		GlobalOperations.updateXML();
 		State=DATASETSTATE.IDLE;
 	}
 	
 	private void updateNumRecords(Integer numRecords) {
-		DatasetIndex.GetDataset(dID).setAttribute("numRecords",numRecords.toString());
-		DatasetIndex.WriteXML();
+		GlobalOperations.getDataset(dID).setAttribute("numRecords",numRecords.toString());
+		GlobalOperations.updateXML();
 	}
 	private void readFrequencies() throws FileNotFoundException, IOException {
 		String tmp;
@@ -212,8 +212,8 @@ public class Dataset {
 		dp=new DataProcessor(dataint);
 		new Thread(dp).start();
 		
-		DatasetIndex.addDataset(dID, dataint.Origin, dataint.Description,dataint.Url);
-		DatasetIndex.WriteXML();
+		GlobalOperations.addDataset(dID, dataint.Origin, dataint.Description,dataint.Url);
+		GlobalOperations.updateXML();
 	}
 	
 	public DATASETSTATE GetState() {
@@ -221,7 +221,9 @@ public class Dataset {
 	}
 	
 	public Integer getProgress() {
-		if(dp!=null) return dp.dataint.sdataset.records.size(); else return null;
+		if(dp!=null && dp.dataint!=null && dp.dataint.sdataset!=null && dp.dataint.sdataset.records!=null) {
+			return dp.dataint.sdataset.records.size();
+		} else return null;
 	}
 
 	public String Query(String aID,Integer[] taxID,int nNeigh,int nLevels,boolean loadSecondaryLinks,boolean makeClusters) throws DatasetException {
@@ -245,7 +247,7 @@ public class Dataset {
 	public String Analyze(Integer[] vars,Integer min_freq,Float sigmaPercent,boolean downweight) {
 		Analysis thisan;
 		if(this.State!=DATASETSTATE.IDLE) return null;
-		String aID=DatasetIndex.findAnalysis(dID, vars, min_freq, sigmaPercent,downweight);
+		String aID=GlobalOperations.findAnalysis(dID, vars, min_freq, sigmaPercent,downweight);
 		
 		if(aID==null) {
 			thisan=new Analysis(vars,min_freq,sigmaPercent,downweight);
@@ -253,8 +255,8 @@ public class Dataset {
 			aID=thisan.aID;
 			new Thread(thisan).start();
 // update XML with this analysis
-			DatasetIndex.addAnalysis(thisan);//this.dID,thisan.aID,vars,min_freq,sigmaPercent);
-			DatasetIndex.WriteXML();
+			GlobalOperations.addAnalysis(thisan);//this.dID,thisan.aID,vars,min_freq,sigmaPercent);
+			GlobalOperations.updateXML();
 		}
 		return(aID);
 	}

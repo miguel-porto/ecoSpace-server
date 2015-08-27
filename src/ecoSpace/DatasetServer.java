@@ -20,14 +20,14 @@ public class DatasetServer {
 	public Map<String,Dataset> datasets=new HashMap<String,Dataset>();
 	private int nDistanceDownloads=0;
 	public DatasetServer() {
-		NodeList dslist=DatasetIndex.GetDatasets();
+		NodeList dslist=GlobalOperations.getDatasets();
 		long memory;
 		for(int i=0;i<dslist.getLength();i++) {
 			memory=0;
 			Element dsn=(Element) dslist.item(i);
 			Dataset ds=new Dataset(dsn);	// pass the XML element
 			datasets.put(dsn.getAttribute("id").toString(),ds);
-			System.out.println("Data set "+ds.dID+" «"+ds.getDescription()+"»: "+(ds.isProcessed ? "PROCESSED ("+ds.taxonNames.size()+" taxa)" : "NOT PROCESSED"));
+			System.out.println("Dataset "+ds.dID+" «"+ds.getDescription()+"»: "+(ds.isProcessed ? "PROCESSED ("+ds.taxonNames.size()+" taxa)" : "NOT PROCESSED"));
 			if(ds.isProcessed) {
 				for(Dataset.Analysis an : ds.analyses.values()) {
 					memory+=an.getMemoryUsed();
@@ -75,8 +75,10 @@ public class DatasetServer {
     		tmpo.put("ntaxa",ds.getValue().taxonNames.size());
     		if(ds.getValue().FileKey!=null) tmpo.put("fileKey",ds.getValue().FileKey);
     		if(ds.getValue().GetState()==DATASETSTATE.IDLE) tmpo.put("ready",true); else tmpo.put("ready",false);
-    		tmpo.put("state",DatasetIndex.TranslateDatasetState(ds.getValue().GetState()));
-    		nrec=DatasetIndex.GetDataset(ds.getValue().dID).getAttribute("numRecords");
+    		tmpo.put("state",GlobalOperations.translateDatasetState(ds.getValue().GetState()));
+    				//+(ds.getValue().getProgress()==null ? "" : " "+ds.getValue().getProgress()+" records processed."));
+    		
+    		nrec=GlobalOperations.getDataset(ds.getValue().dID).getAttribute("numRecords");
     		if(nrec!="") tmpo.put("numrec", Integer.parseInt(nrec)); else tmpo.put("numrec", 0);
     		dss.add(tmpo);
     	}
@@ -99,7 +101,17 @@ public class DatasetServer {
 		return nan;
 	}
 	
-	public String Analyze(String dID,Integer[] vars,Integer min_freq,Float sigmaPercent,boolean downweight) throws IOException {
+	/**
+	 * Places a new analysis running, or fetches an analysis ID in case the analysis already exists.
+	 * @param dID Dataset ID
+	 * @param vars Variable codes
+	 * @param min_freq
+	 * @param sigmaPercent
+	 * @param downweight
+	 * @return An analysis ID. It can correspond to a newly created analysis, or an existing one.
+	 * @throws IOException
+	 */
+	public String analyze(String dID,Integer[] vars,Integer min_freq,Float sigmaPercent,boolean downweight) throws IOException {
 		String aID=null;
 		Dataset ds=datasets.get(dID);
 		if(ds==null) throw new IOException("Dataset "+dID+" not found.");
@@ -126,8 +138,8 @@ public class DatasetServer {
 	public int CleanXMLIndex() {
 // removes problematic datasets from XML
 		int i,count=0;
-		Node parent=DatasetIndex.GetRoot();
-		NodeList dsl=DatasetIndex.GetDatasets();
+		Node parent=GlobalOperations.getRoot();
+		NodeList dsl=GlobalOperations.getDatasets();
 		List<Element> toremove=new ArrayList<Element>();
 		for(i=0;i<dsl.getLength();i++) {
 			Element el=(Element) dsl.item(i);
@@ -141,7 +153,7 @@ public class DatasetServer {
 			count++;
 			parent.removeChild(el);
 		}
-		DatasetIndex.WriteXML();
+		GlobalOperations.updateXML();
 		return(count);
 	}
 	
@@ -154,7 +166,7 @@ public class DatasetServer {
 	public String GetState() {
 		String msg,out="";
 		for(Entry<String, Dataset> ds:datasets.entrySet()) {
-			msg="Dataset "+ds.getValue().dID+" «"+ds.getValue().getDescription()+"»: "+DatasetIndex.TranslateDatasetState(ds.getValue().GetState())+(ds.getValue().getProgress()==null ? "" : " "+ds.getValue().getProgress()+" records processed.");
+			msg="Dataset "+ds.getValue().dID+" «"+ds.getValue().getDescription()+"»: "+GlobalOperations.translateDatasetState(ds.getValue().GetState())+(ds.getValue().getProgress()==null ? "" : " "+ds.getValue().getProgress()+" records processed.");
 			out+=msg+"\n";
 			for(Analysis an:ds.getValue().analyses.values()) {
 				out+="...Analysis "+an.getAnalysisID()+": "+an.getState()+" - variables "+an.getVariables().toString()+"; min frequency "+an.getMinFrequency()+"; sigma "+an.getSigmaPercent()+"; memory "+Math.ceil(an.getMemoryUsed()/(1024*1024))+" Mb\n";
@@ -165,8 +177,8 @@ public class DatasetServer {
 	
 	public void Empty() {
 		datasets.clear();
-		DatasetIndex.Empty();
-		DatasetIndex.WriteXML();
+		GlobalOperations.Empty();
+		GlobalOperations.updateXML();
 	}
 	public void ShutDown() {
 		

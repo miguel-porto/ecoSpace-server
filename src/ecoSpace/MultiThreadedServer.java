@@ -57,7 +57,7 @@ public class MultiThreadedServer implements Runnable{
         try {
             this.serverSocket.close();
             dss.ShutDown();
-            DatasetIndex.close();
+            GlobalOperations.close();
             out.println("STOPPED");
         } catch (IOException e) {
             throw new RuntimeException("Error closing server", e);

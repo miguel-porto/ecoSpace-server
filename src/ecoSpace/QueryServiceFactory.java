@@ -26,7 +26,7 @@ public final class QueryServiceFactory {
 				qserv=new LocalFileQueryService(query);
 				break;
 			default:	// custom query service
-				qserv=new ExternalQueryService(DatasetIndex.getQueryService(queryType),query); 
+				qserv=new ExternalQueryService(GlobalOperations.getQueryService(queryType),query); 
 				break;
 			}
 		} catch (FileNotFoundException e) {
