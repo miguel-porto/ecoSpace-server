@@ -72,17 +72,17 @@ public final class GlobalOperations {
 			}
 			br.close();
 		} catch (FileNotFoundException e) {
-			System.out.println("Empty species file.");
+			EcoSpace.outputlog.println("Empty species file.");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		
-		System.out.println(species.size()+" species found.");
+		EcoSpace.outputlog.println(species.size()+" species found.");
 		
 		try {
 			speciesNameWriter=new BufferedWriter(new FileWriter(spfile,true));
 		} catch (IOException e) {
-			System.out.println("Error opening species list file: "+e.getMessage());
+			EcoSpace.outputlog.println("Error opening species list file: "+e.getMessage());
 			speciesNameWriter=null;
 		}
 	}
@@ -178,13 +178,13 @@ public final class GlobalOperations {
 		JSONObject jobj=(JSONObject)JSONValue.parse(new InputStreamReader(gbifSp.openStream()));
 		res=(JSONArray)jobj.get("results");
 		if(res.size()!=1) {		// TODO: when more than one record, what to do? Now it's ignored
-			System.out.println("Error: "+name+" with "+res.size()+" records");
+			EcoSpace.outputlog.println("Error: "+name+" with "+res.size()+" records");
 			return null;
 		} else {
 			nubKey=(Long)((JSONObject)(res.get(0))).get("nubKey");
 			speciesNameWriter.write(name+"\t"+nubKey+"\n");
 			speciesNameWriter.flush();
-			System.out.println("Added "+name+" "+nubKey);
+			EcoSpace.outputlog.println("Added "+name+" "+nubKey);
 			return nubKey;
 		}
 	}

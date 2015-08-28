@@ -9,7 +9,7 @@ import java.util.UUID;
 
 public abstract class DataInterface implements Closeable {
 	public DATASETSTATE State;
-	protected simpleDataset sdataset;
+	protected SimpleDataset sdataset;
 	protected String Description,Origin,Url=null;
 	protected String tmpID;
 	public DataInterface(String description,String origin,String url) {

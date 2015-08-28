@@ -27,13 +27,13 @@ public class DatasetServer {
 			Element dsn=(Element) dslist.item(i);
 			Dataset ds=new Dataset(dsn);	// pass the XML element
 			datasets.put(dsn.getAttribute("id").toString(),ds);
-			System.out.println("Dataset "+ds.dID+" «"+ds.getDescription()+"»: "+(ds.isProcessed ? "PROCESSED ("+ds.taxonNames.size()+" taxa)" : "NOT PROCESSED"));
+			EcoSpace.outputlog.println("Dataset "+ds.dID+" «"+ds.getDescription()+"»: "+(ds.isProcessed ? "PROCESSED ("+ds.taxonNames.size()+" taxa)" : "NOT PROCESSED"));
 			if(ds.isProcessed) {
 				for(Dataset.Analysis an : ds.analyses.values()) {
 					memory+=an.getMemoryUsed();
-					System.out.println("...Analysis "+an.getAnalysisID()+": "+an.getState()+" - variables "+an.getVariables().toString()+"; min frequency "+an.getMinFrequency());
+					EcoSpace.outputlog.println("...Analysis "+an.getAnalysisID()+": "+an.getState()+" - variables "+an.getVariables().toString()+"; min frequency "+an.getMinFrequency());
 				}
-				System.out.println("...Total memory used: "+Math.ceil(memory/(1024*1024))+" Mb");
+				EcoSpace.outputlog.println("...Total memory used: "+Math.ceil(memory/(1024*1024))+" Mb");
 				//ds.CreateFromGBIFRequest(6635,"POLYGON((-9.78 44.11,-10.17 35.71,4.56 35.08,4.67 44.17,-9.78 44.11))");
 			}
 		}
@@ -42,7 +42,7 @@ public class DatasetServer {
             @Override
             public void run() {
             	Close();
-            	System.out.println("Shutting down server..." );
+            	EcoSpace.outputlog.println("Shutting down server..." );
             }
         });
 	}

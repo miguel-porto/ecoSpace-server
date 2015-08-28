@@ -7,6 +7,11 @@ public class Species implements Comparable<Species> {
 	private Long nubKey;
 	private Integer ID=null;
 	
+	/**
+	 * If species is not in the CSV list, this adds a new species and respective nubKey.
+	 * @param name
+	 * @throws IOException
+	 */
 	public Species(String name) throws IOException {
 		this.name=name;
 		this.nubKey=GlobalOperations.addSpecies(name);

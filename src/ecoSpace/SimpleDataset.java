@@ -15,7 +15,7 @@ import java.util.Set;
  * @author miguel
  *
  */
-public class simpleDataset implements Closeable {
+public class SimpleDataset implements Closeable {
 	public int[] taxID;
 	public List<Species> speciesList;
 	public Map<String,Integer> speciesMap=new HashMap<String,Integer>();
@@ -92,12 +92,12 @@ public class simpleDataset implements Closeable {
 	public void close() {
 		taxID=new int[records.size()];
 		int i=0;
-		System.out.println("Processing species names...");
+		EcoSpace.outputlog.println("Processing species names...");
 		processSpecies();
-		System.out.println("Assigning IDs to records...");
+		EcoSpace.outputlog.println("Assigning IDs to records...");
 		for(Record rec : records) {
 			//taxID[i]=SpeciesNames.indexOf(sp.speciesName);
-			//System.out.println(rec.species.getName()+": "+rec.species.getInternalID()+", "+this.speciesMap.get(rec.species.getName()));
+			//EcoSpace.outputlog.println(rec.species.getName()+": "+rec.species.getInternalID()+", "+this.speciesMap.get(rec.species.getName()));
 			taxID[i]=rec.species.getInternalID();//this.speciesMap.get(sp.species.getName());
 			i++;
 		}

@@ -41,12 +41,11 @@ public class OccurrenceInterface extends DataInterface {
 	/**
 	 * Reads a DWC occurrence file, taking the coordinates and taxon of species and subspecies. Excludes records which are not SPECIES or SUBSPECIES. 
 	 * @param filename	Path to local text file
-	 * @return A {@link simpleDataset} with the included records.
+	 * @return A {@link SimpleDataset} with the included records.
 	 * @throws IOException
 	 */
-	public static simpleDataset ProcessOccurrenceFile(String filename) throws IOException {
-		simpleDataset sdataset=new simpleDataset();
-		//Iterable<CSVRecord> records=null;
+	public static SimpleDataset ProcessOccurrenceFile(String filename) throws IOException {
+		SimpleDataset sdataset=new SimpleDataset();
 		CSVRecord record;
 		CSVParser tmp;
 		CSVFormat fmt=CSVFormat.DEFAULT.withDelimiter('\t');
@@ -78,22 +77,12 @@ public class OccurrenceInterface extends DataInterface {
 				if(record.get(tRank).toString().toUpperCase().equals("SPECIES") || record.get(tRank).toString().toUpperCase().equals("SUBSPECIES")) {
 					if(!record.get(gen).trim().equals("")) {
 						sdataset.addRecord(Float.parseFloat(record.get(dLat)), Float.parseFloat(record.get(dLon)), record.get(gen)+" "+record.get(sEpi));
-/*					} else {
-						
-						if(responseCode==HttpURLConnection.HTTP_OK) {
-							sdataset.records.add(sdataset.new record(
-								(float)Float.parseFloat(record.get(dLat))
-								,(float)Float.parseFloat(record.get(dLon))
-								,sp
-							));
-						}*/
 					}
 				}
 			} catch (Throwable e) {
-				e.printStackTrace();
-				System.out.println("Error found on line "+count+", skipped line: "+e.getMessage());
+				//e.printStackTrace();
+				EcoSpace.outputlog.println("Error found on line "+count+", skipped line: "+e.getMessage());
 			}
-			//if(count>30) break;
 		}
 		br.close();
 		Collections.sort(sdataset.records);
@@ -116,7 +105,7 @@ public class OccurrenceInterface extends DataInterface {
 					}
 				}
 			} catch (Throwable e) {
-				System.out.println("Error found on line "+count);
+				EcoSpace.outputlog.println("Error found on line "+count);
 			}
 /*			for(CSVRecord record : records) {
 				if(record.get("taxonRank").toString().toUpperCase().equals("SPECIES") || record.get("taxonRank").toString().toUpperCase().equals("SUBSPECIES")) {
@@ -129,10 +118,10 @@ public class OccurrenceInterface extends DataInterface {
 			}
 			Collections.sort(sdataset.records);			
 		} catch (IOException e) {
-			System.out.println(filename+" not found.");
+			EcoSpace.outputlog.println(filename+" not found.");
 			return(null);
 		}*/
-		System.out.println("Read "+sdataset.records.size()+" records.");
+		EcoSpace.outputlog.println("Read "+sdataset.records.size()+" records.");
 		return(sdataset);		
 	}
 }

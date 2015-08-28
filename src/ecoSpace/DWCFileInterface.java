@@ -25,7 +25,7 @@ public class DWCFileInterface extends DataInterface {
 		State=DATASETSTATE.WAITING_FILE;
 		try {
 	        while(!HttpDownloadUtility.downloadFile(fileurl, "/tmp/zip_"+super.tmpID)) {
-				System.out.print(".");
+	        	EcoSpace.outputlog.print(".");
 	            Thread.sleep(10000);
 	        }
 		} catch (InterruptedException | IOException e) {
@@ -37,11 +37,11 @@ public class DWCFileInterface extends DataInterface {
 		try {
 			unzipAndReadOccurrences("/tmp/zip_"+super.tmpID,"/tmp/"+super.tmpID);	// try to open as ZIP file
 		} catch (IOException e) {
-			System.out.println("ZIP file error, trying as text: "+e.getMessage());
+			EcoSpace.outputlog.println("ZIP file error, trying as text: "+e.getMessage());
 			try {
 				super.sdataset=OccurrenceInterface.ProcessOccurrenceFile("/tmp/zip_"+super.tmpID);		// if not, try as text file
 			} catch (IOException e1) {
-				System.out.println("Text file error: "+e1.getMessage());
+				EcoSpace.outputlog.println("Text file error: "+e1.getMessage());
 				return false;
 			}
 		}
@@ -76,7 +76,7 @@ public class DWCFileInterface extends DataInterface {
 				FileOutputStream fos = new FileOutputStream(outfilename);
 				BufferedOutputStream dest = new BufferedOutputStream(fos, BUFFER);
 				while ((count = zin.read(data, 0, BUFFER)) != -1) {
-					//System.out.write(x);
+					//EcoSpace.outputlog.write(x);
 					dest.write(data, 0, count);
 				}
 				dest.flush();

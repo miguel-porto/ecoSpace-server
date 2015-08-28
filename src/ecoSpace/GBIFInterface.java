@@ -97,7 +97,7 @@ class GBIFInterface extends DataInterface {
 		// read gbif user account from external file
 		String[] account=GlobalOperations.getGBIFAccount();
 		
-		System.out.println("Using GBIF account for user "+account[0]);
+		EcoSpace.outputlog.println("Using GBIF account for user "+account[0]);
 		URL url = new URL ("http://api.gbif.org/v1/occurrence/download/request");
 		String encoding = Base64.encodeBase64String((account[0]+":"+account[1]).getBytes());
 		

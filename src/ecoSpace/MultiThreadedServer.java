@@ -25,7 +25,7 @@ public class MultiThreadedServer implements Runnable{
     	try {
 			openServerSocket();
 		} catch (IOException e1) {
-			System.out.println("ERROR\n"+e1.getMessage());
+			EcoSpace.outputlog.println("ERROR\n"+e1.getMessage());
 			return;
 		}
         while(! isStopped()){
@@ -34,7 +34,7 @@ public class MultiThreadedServer implements Runnable{
                 clientSocket = this.serverSocket.accept();
             } catch (IOException e) {
                 if(isStopped()) {
-                    System.out.println("Server Stopped.") ;
+                	EcoSpace.outputlog.println("Server Stopped.") ;
                     return;
                 }
                 throw new RuntimeException(
@@ -44,7 +44,7 @@ public class MultiThreadedServer implements Runnable{
                 new ServerDispatch(clientSocket, "Multithreaded Server",dss,this)
             ).start();
         }
-        System.out.println("Server Stopped.") ;
+        EcoSpace.outputlog.println("Server Stopped.") ;
     }
 
 

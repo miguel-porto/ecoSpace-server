@@ -133,6 +133,7 @@ public class ServerDispatch implements Runnable{
     				break;
     			case 3:
     				ds=datasetServer.datasets.get(path[2]);
+    				if(ds==null) {out.println(error("No such dataset ID."));break;}
     				GlobalOperations.removeDataset(path[2]);
     				GlobalOperations.updateXML();
     				datasetServer.datasets.remove(path[2]);
@@ -146,10 +147,11 @@ public class ServerDispatch implements Runnable{
     				}
     				break;
     			case 4:
-    				ds=datasetServer.datasets.get(path[2]);    				
+    				ds=datasetServer.datasets.get(path[2]);
+    				if(ds==null) {out.println(error("No such dataset ID."));break;}
     				GlobalOperations.removeAnalysis(path[2],path[3]);
     				GlobalOperations.updateXML();
-    				ds.analyses.remove(path[3]);    				
+    				ds.analyses.remove(path[3]);
     				File dir1=new File("data/");
     				File[] files1=dir1.listFiles();
     				for(File f:files1) {
@@ -171,7 +173,7 @@ public class ServerDispatch implements Runnable{
     				if(ds!=null)
     					out.println("{\"success\":true,\"id\":\""+path[2]+"\",\"state\":\""+GlobalOperations.translateDatasetState(ds.GetState())+(ds.getProgress()==null ? "" : " "+ds.getProgress()+" records processed.")+"\",\"ready\":"+(ds.GetState()==DATASETSTATE.IDLE ? true : false)+"}");
     				else
-    					out.println("{\"success\":false,\"msg\":\"No such dataset ID\"}");
+    					out.println(error("No such dataset ID."));
     				break;
     			case 4:
     				ds=datasetServer.datasets.get(path[2]);
@@ -806,7 +808,7 @@ public class ServerDispatch implements Runnable{
 	    			//Float winrat=(float)nhei/nwid;
 	    			Float newwid=rat>1 ? (maxlng-minlng)*rat : (maxlng-minlng);	// this is the width and height, in degrees, of the PNG
 	    			Float newhei=rat<1 ? (maxlat-minlat)/rat : (maxlat-minlat);
-	    			//System.out.println(rat+": "+newwid+" "+newhei);
+	    			//EcoSpace.outputlog.println(rat+": "+newwid+" "+newhei);
 	
 	    			imgx=minlng-(newwid*margin)/(1-2*margin);
 	    			imgwid=(newwid)/(1-2*margin);

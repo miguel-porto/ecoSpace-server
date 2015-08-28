@@ -128,6 +128,15 @@ void findRelatedTaxa(int basetax,int howmany,DISTANCE *dist,unsigned char *dista
 	void *tmppointer;
 	offset=basetax*dist->ntaxa;
 
+	{
+		int fd;
+		fpos_t pos;
+		fflush(stdout);
+		fgetpos(stdout, &pos);
+		fd = dup(fileno(stdout));
+		FILE *dummy=freopen("logfile.txt", "a", stdout);
+	}
+	
 	for(k=0;k<howmany;k++) {
 //	while(k<howmany) {
 		mind=NA_DISTANCE+1;
@@ -353,7 +362,7 @@ JNIEXPORT jstring JNICALL Java_ecoSpace_nativeFunctions_getRelationships(JNIEnv 
 			flow[ind-1]=tmpflow;
 		}
 		fclose(clusters);
-//		unlink(template2);
+		unlink(template2);
 		free(tmpbuf);
 	}
 	abort:

@@ -115,9 +115,9 @@ public class Dataset {
 		if(f2.isFile() && f3.isFile() && f5.isFile()) isProcessed=true;
 // open handles to existing saved analyses
 		try {
-			if(isProcessed) Open(); else System.out.println("Missing data files for this dataset.");
+			if(isProcessed) Open(); else EcoSpace.outputlog.println("Missing data files for this dataset.");
 		} catch(IOException e) {
-			System.out.println(e.getMessage());
+			EcoSpace.outputlog.println(e.getMessage());
 			isProcessed=false;
 			State=DATASETSTATE.ERROR;
 		}
@@ -276,7 +276,7 @@ public class Dataset {
 			dataint.State=DATASETSTATE.READING_VARIABLES;
 			updateNumRecords(dataint.sdataset.taxID.length);
 			nativeFunctions.readVariablesFromCoords(dataint.sdataset.getLatArray(),dataint.sdataset.getLngArray(),dataint.sdataset.taxID,dataint.sdataset.speciesList.size(),dID);
-			System.out.println("Ok");
+			EcoSpace.outputlog.println("Ok");
 			try {
 				Open();
 			} catch(IOException e) {
@@ -398,10 +398,10 @@ public class Dataset {
 		
 		public void Close() {
 			if(this.handle!=0) {
-				System.out.println("Closing "+this.aID);
+				EcoSpace.outputlog.println("Closing "+this.aID);
 				nativeFunctions.closeDistanceMatrix(this.handle);
 				this.handle=0;
-			} else System.out.println("Already closed");
+			} else EcoSpace.outputlog.println("Already closed");
 		}
 		public String Query(Integer[] taxID,int nNeigh,int nLevels,boolean loadSecondaryLinks, boolean makeClusters) throws DatasetException {
 			int[] tmp=nativeFunctions.toPrimitiveInt(Arrays.asList(taxID));

@@ -33,15 +33,15 @@ public class GBIFFileKeyInterface extends DataInterface {
 	
 	public static boolean waitForFile(String fileKey,String dID) {
 		int count=0;
-		System.out.println("Waiting for file "+fileKey+"...");
+		EcoSpace.outputlog.println("Waiting for file "+fileKey+"...");
 		try {
 	        while(!HttpDownloadUtility.downloadFile("http://api.gbif.org/v1/occurrence/download/request/"+fileKey, "/tmp/zip_"+dID) && count<200) {
-				System.out.print(".");
+	        	EcoSpace.outputlog.print(".");
 				count++;
 	            Thread.sleep(15000);
 	        }
 		} catch (InterruptedException | IOException e) {
-			System.out.println("Some error. "+fileKey);
+			EcoSpace.outputlog.println("Some error. "+fileKey);
 			return(false);
 		}
 		if(count==200)

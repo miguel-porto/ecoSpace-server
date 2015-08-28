@@ -41,10 +41,10 @@ public class HttpDownloadUtility {
                         fileURL.length());
             }*/
  
-            System.out.println("Content-Type = " + contentType);
-            System.out.println("Content-Disposition = " + disposition);
-            System.out.println("Content-Length = " + contentLength);
-            System.out.println("fileName = " + fileName);
+            EcoSpace.outputlog.println("Content-Type = " + contentType);
+            EcoSpace.outputlog.println("Content-Disposition = " + disposition);
+            EcoSpace.outputlog.println("Content-Length = " + contentLength);
+            EcoSpace.outputlog.println("fileName = " + fileName);
  
             // opens input stream from the HTTP connection
             InputStream inputStream = httpConn.getInputStream();
@@ -66,7 +66,7 @@ public class HttpDownloadUtility {
             httpConn.disconnect();
             return(false);        	
         } else {
-            System.out.println("No file to download. Server replied HTTP code: " + responseCode);
+        	EcoSpace.outputlog.println("No file to download. Server replied HTTP code: " + responseCode);
             httpConn.disconnect();
             return(false);
         }

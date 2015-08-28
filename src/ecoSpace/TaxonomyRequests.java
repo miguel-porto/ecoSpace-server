@@ -10,6 +10,11 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
+/**
+ * This class is currently not used.
+ * @author miguel
+ *
+ */
 public class TaxonomyRequests {
 	private static Integer pageSize=500;
 	public static String getOrders(String kingdom) {
@@ -47,7 +52,7 @@ public class TaxonomyRequests {
 				tmp=(JSONObject)o;
 				out+=tmp.get("orderKey")+"\t"+tmp.get("canonicalName")+"\n";
 			}
-			System.out.println(tmps);
+			EcoSpace.outputlog.println(tmps);
 			offset+=pageSize;
 		} while(!end);
 		return(out);
