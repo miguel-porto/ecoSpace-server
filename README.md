@@ -7,7 +7,7 @@ ecoSpace-server is the Java server that does all the computations necessary for 
 * computes and stores the multidimensional kernel density surfaces for the variables chosen by the user (currently up to 3-dimensional spaces are supported);
 * computes and stores the pairwise distance matrices by the intersection of the kernel densities of all pairs of species;
 * assembles species networks based on the distance matrices and the user queries;
-* exposes services for querying the network and displaying kernel density surfaces in self-contained SVG.
+* [exposes services](http://flora-on.pt/ecospace/?w=api) for querying the network and displaying kernel density surfaces in self-contained SVG.
 
 The code is here provided as an Eclipse project.
 
