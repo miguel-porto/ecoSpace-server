@@ -157,7 +157,7 @@ public class DatasetServer {
 		return(count);
 	}
 	
-	public String Query(String dID,String aID,Integer[] taxID,int nNeigh,int nLevels,boolean loadSecondaryLinks,boolean makeClusters) throws DatasetException {
+	public String Query(String dID,String aID,Integer[] taxID,int nNeigh,int nLevels,boolean loadSecondaryLinks,boolean makeClusters) throws DatasetException, IOException {
 		Dataset ds=datasets.get(dID);
 		if(ds==null) throw new DatasetException("Dataset "+dID+" not found.");
 		return ds.Query(aID,taxID,nNeigh,nLevels,loadSecondaryLinks,makeClusters);

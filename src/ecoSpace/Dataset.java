@@ -226,7 +226,7 @@ public class Dataset {
 		} else return null;
 	}
 
-	public String Query(String aID,Integer[] taxID,int nNeigh,int nLevels,boolean loadSecondaryLinks,boolean makeClusters) throws DatasetException {
+	public String Query(String aID,Integer[] taxID,int nNeigh,int nLevels,boolean loadSecondaryLinks,boolean makeClusters) throws DatasetException, IOException {
 		Analysis an=this.analyses.get(aID);
 		if(an==null) throw new DatasetException("Analysis "+aID+" not found.");
 		return an.Query(taxID,nNeigh,nLevels,loadSecondaryLinks,makeClusters);
@@ -403,10 +403,15 @@ public class Dataset {
 				this.handle=0;
 			} else EcoSpace.outputlog.println("Already closed");
 		}
-		public String Query(Integer[] taxID,int nNeigh,int nLevels,boolean loadSecondaryLinks, boolean makeClusters) throws DatasetException {
+		public String Query(Integer[] taxID,int nNeigh,int nLevels,boolean loadSecondaryLinks, boolean makeClusters) throws DatasetException, IOException {
 			int[] tmp=nativeFunctions.toPrimitiveInt(Arrays.asList(taxID));
-			if(this.handle!=0 && this.State==ANALYSISSTATE.READY)
-				return(nativeFunctions.getRelationships(this.handle, tmp, nLevels, nNeigh, loadSecondaryLinks, makeClusters));
+			if(this.handle!=0 && this.State==ANALYSISSTATE.READY) {
+				String out=nativeFunctions.getRelationships(this.handle, tmp, nLevels, nNeigh, loadSecondaryLinks, makeClusters);
+				if(out==null)
+					throw new IOException("Some error occurred while fetching relations");
+				else
+					return out; 
+			}
 				//return(nativeFunctions.queryRelatedTaxa(this.handle, taxID[0], nLevels, nNeigh));
 			throw new DatasetException("Analysis "+this.aID+" not ready.");
 		}

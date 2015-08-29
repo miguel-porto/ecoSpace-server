@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <locale.h>
+#include <errno.h>
 #include "econav.h"
 #define PUSHNODE(tpos,lev) {nodes.nodes[nodes.nnodes]=tpos;nodes.level[nodes.nnodes]=lev;nodes.nnodes++;}
 #define CLUSTERBUFSIZE	15
@@ -31,7 +32,8 @@ typedef struct {
 } NODES;
 
 void findRelatedTaxa(int taxpos,int howmany,DISTANCE *dist,unsigned char *distance,NODES *outnodes,LINKS *outlinks,int level,bool onlyexisting);
-static int level=0,numOutputLinks=100,numOutputNodes,outBufferSize=100000;
+static int level=0,numOutputLinks=100,outBufferSize=100000;
+static long numOutputNodes;
 
 JNIEXPORT jlongArray JNICALL Java_ecoSpace_nativeFunctions_openDistanceMatrix(JNIEnv *env, jclass obj, jstring dID, jstring aID) {
 	const char *pdID=(*env)->GetStringUTFChars(env, dID , NULL );
@@ -128,15 +130,6 @@ void findRelatedTaxa(int basetax,int howmany,DISTANCE *dist,unsigned char *dista
 	void *tmppointer;
 	offset=basetax*dist->ntaxa;
 
-	{
-		int fd;
-		fpos_t pos;
-		fflush(stdout);
-		fgetpos(stdout, &pos);
-		fd = dup(fileno(stdout));
-		FILE *dummy=freopen("logfile.txt", "a", stdout);
-	}
-	
 	for(k=0;k<howmany;k++) {
 //	while(k<howmany) {
 		mind=NA_DISTANCE+1;
@@ -165,7 +158,7 @@ void findRelatedTaxa(int basetax,int howmany,DISTANCE *dist,unsigned char *dista
 					nodes->level=tmppointer;
 				else error("Some error reallocating");
 				
-				printf("Increased buffer for nodes, %d %d\n",nodes->nnodes,numOutputNodes);
+				printf("Increased buffer for nodes, %d %ld\n",nodes->nnodes,numOutputNodes);
 			}
 			nodes->nodes[nodes->nnodes]=which;
 			nodes->level[nodes->nnodes]=level;
@@ -180,7 +173,7 @@ void findRelatedTaxa(int basetax,int howmany,DISTANCE *dist,unsigned char *dista
 		} else {
 			if(outlinks->nlinks>=numOutputLinks) {
 	//			outlinks->links=realloc(outlinks->links,sizeof(outlinks->links)+sizeof(LINK)*20);
-				numOutputLinks+=100;
+				numOutputLinks+=1000;
 				if(tmppointer=realloc(outlinks->links,sizeof(LINK)*numOutputLinks))
 					outlinks->links=tmppointer;
 				else error("Some error reallocating");
@@ -232,13 +225,27 @@ JNIEXPORT jstring JNICALL Java_ecoSpace_nativeFunctions_getRelationships(JNIEnv 
 	float *flow;
 	setlocale(LC_NUMERIC, "C");	
 
-	numOutputNodes=(maxperlevel<1) ? lenquery : ( (nlevels<1) ? lenquery : ((int)pow(maxperlevel,nlevels)*lenquery+lenquery) );
+	{
+		int fd;
+		fpos_t pos;
+		fflush(stdout);
+		fgetpos(stdout, &pos);
+		fd = dup(fileno(stdout));
+		FILE *dummy=freopen("logfile.txt", "a", stdout);
+	}
+
+	numOutputNodes=(maxperlevel<1) ? lenquery : ( (nlevels<1) ? lenquery : ((long)pow(maxperlevel,nlevels)*lenquery+lenquery) );
+	if(numOutputNodes>20000) numOutputNodes=20000;
 	nodes.nodes=malloc(sizeof(int)*numOutputNodes);
+	if(!nodes.nodes) {printf("Error allocating memory for %ld nodes\n",numOutputNodes);fflush(stdout);return (*env)->NewGlobalRef(env, NULL);}
 	nodes.level=malloc(sizeof(int)*numOutputNodes);
+	if(!nodes.level) {free(nodes.nodes);printf("Error allocating memory for %ld nodes\n",numOutputNodes);fflush(stdout);return (*env)->NewGlobalRef(env, NULL);}
 	links.links=malloc(sizeof(LINK)*numOutputLinks);
 	nodes.nnodes=0;
 	links.nlinks=0;
 	
+	printf("Memory OK\n");
+	fflush(stdout);
 // search for the position of each taxon ID
 	for(i=0;i<lenquery;i++) {
 		for(taxpos=0;taxpos<dist->ntaxa;taxpos++) {
@@ -284,21 +291,36 @@ JNIEXPORT jstring JNICALL Java_ecoSpace_nativeFunctions_getRelationships(JNIEnv 
 // find clusters with Infomap
 		int tmpfd;
 		char template2[100];
+		memset(template2,0,100);
 		strcpy(template2,"/tmp/treeXXXXXX");
 		FILE *treeout=0;
 		void *dummy;
+		int count=0;
 		do {
 			tmpfd=mkstemp(template2);
-			printf("%s ********************\n",template2);
-			treeout=fdopen(tmpfd,"wx");
-		} while(!treeout);
+			if(tmpfd!=-1) {
+				printf("%s ********************\n",template2);
+				treeout=fdopen(tmpfd,"wx");
+				if(!treeout) {
+					memset(template2,0,100);
+					strcpy(template2,"/tmp/treeXXXXXX");
+					count++;
+				}
+			} else {
+				printf("Error creating tempfile: %d\n",errno);
+				memset(template2,0,100);
+				strcpy(template2,"/tmp/treeXXXXXX");
+				count++;
+			}
+		} while(!treeout && count<15);
+
 		int maxid=0;
 		for(j=0;j<nodes.nnodes;j++) {
 			if(nodes.nodes[j]>maxid) maxid=nodes.nodes[j];
 		}
 		int *dic=malloc(sizeof(int)*(maxid+1));
 		
-		if(!dic) {
+		if(!dic || count==15) {
 			printf("Some ERROR on dic");	
 			fclose(treeout);
 			clusters_computed=false;

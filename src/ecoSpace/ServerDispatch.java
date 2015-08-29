@@ -490,7 +490,7 @@ public class ServerDispatch implements Runnable{
 					} catch (NumberFormatException e) {
 						e.printStackTrace();
 						break;
-					} catch (DatasetException e) {
+					} catch (DatasetException | IOException e) {
 						out.println(error(e.getMessage(),fmt));
 						break;
 					}
