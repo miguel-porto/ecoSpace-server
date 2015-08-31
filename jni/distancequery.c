@@ -209,14 +209,21 @@ JNIEXPORT jstring JNICALL Java_ecoSpace_nativeFunctions_getRelationships(JNIEnv 
 	char *out=malloc(outBufferSize);
 	void *tmppointer;
 	jstring result;
+	bool all=false;
 /*	if(!loadsecondarylinks && nlevels<1) {
 		strcpy(out,"{\"success\":true,\"nodes\":[],\"links\":[]}");
 		result = (*env)->NewStringUTF(env,out);
 		return result;
 	}*/
 	DISTANCE *dist=(DISTANCE*)ptr;
-	jsize lenquery = (*env)->GetArrayLength(env, taxID);
 	jint *tid = (*env)->GetIntArrayElements(env, taxID, 0);
+	jsize lenquery = (*env)->GetArrayLength(env, taxID);
+	if(lenquery>0 && tid[0]==-1) {
+		lenquery=dist->ntaxa;		// special case: -1 means to query all species
+		nlevels=0;
+		loadsecondarylinks=true;
+		all=true;
+	}
 	int i,j,k,count,taxpos;
 	NODES nodes;
 	LINKS links;
@@ -235,7 +242,7 @@ JNIEXPORT jstring JNICALL Java_ecoSpace_nativeFunctions_getRelationships(JNIEnv 
 	}
 
 	numOutputNodes=(maxperlevel<1) ? lenquery : ( (nlevels<1) ? lenquery : ((long)pow(maxperlevel,nlevels)*lenquery+lenquery) );
-	if(numOutputNodes>20000) numOutputNodes=20000;
+	if(numOutputNodes>20000 && nlevels>0) numOutputNodes=20000;
 	nodes.nodes=malloc(sizeof(int)*numOutputNodes);
 	if(!nodes.nodes) {printf("Error allocating memory for %ld nodes\n",numOutputNodes);fflush(stdout);return (*env)->NewGlobalRef(env, NULL);}
 	nodes.level=malloc(sizeof(int)*numOutputNodes);
@@ -247,14 +254,20 @@ JNIEXPORT jstring JNICALL Java_ecoSpace_nativeFunctions_getRelationships(JNIEnv 
 	printf("Memory OK\n");
 	fflush(stdout);
 // search for the position of each taxon ID
-	for(i=0;i<lenquery;i++) {
-		for(taxpos=0;taxpos<dist->ntaxa;taxpos++) {
-			if(dist->IDs[taxpos]==(int)tid[i]) break;
+	if(all) {
+		for(i=0;i<dist->ntaxa;i++) {	// push all valid nodes
+			if(dist->IDs[i]>0) PUSHNODE(i,0);
 		}
-		if(taxpos==dist->ntaxa) continue;	// taxID not found
-		PUSHNODE(taxpos,0);		// push into output node stack
+	} else {
+		for(i=0;i<lenquery;i++) {
+			for(taxpos=0;taxpos<dist->ntaxa;taxpos++) {
+				if(dist->IDs[taxpos]==(int)tid[i]) break;
+			}
+			if(taxpos==dist->ntaxa) continue;	// taxID not found
+			PUSHNODE(taxpos,0);		// push into output node stack
+		}
 	}
-
+	
 	if(nodes.nnodes==0) {
 		strcpy(out,"{\"success\":true,\"nodes\":[],\"links\":[]}");
 		result = (*env)->NewStringUTF(env,out);

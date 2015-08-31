@@ -39,27 +39,32 @@ public class Dataset {
 		public List<Integer> parseQuery(String[] query) {
 			String tmp;
 			List<Integer> out=new ArrayList<Integer>();
-			for(int i=0;i<query.length;i++) {
-				if(query[i]==null) continue;
-				tmp=query[i].toLowerCase();
-				if(tmp.matches("^iid:[0-9]+$"))		// query is an internal taxon ID
-					out.add(Integer.parseInt(tmp.substring(4)));
-				else if(tmp.matches("^[0-9]+$")) {		// query is a plain number, which is assumed to be a GBIF nubKey ID
-					tmp=GlobalOperations.getSpeciesFromNub(Long.parseLong(tmp));
-					if(tmp==null) continue; else tmp=tmp.toLowerCase();
-					for(int i1=0;i1<this.size();i1++) {
-						if(this.get(i1).toLowerCase().equals(tmp)) {
-							out.add(i1);
-							break;
+			if(query.length==1 && query[0].toLowerCase().equals("all")) {
+				out.add(-1);
+				return out;
+			} else {
+				for(int i=0;i<query.length;i++) {
+					if(query[i]==null) continue;
+					tmp=query[i].toLowerCase();
+					if(tmp.matches("^iid:[0-9]+$"))		// query is an internal taxon ID
+						out.add(Integer.parseInt(tmp.substring(4)));
+					else if(tmp.matches("^[0-9]+$")) {		// query is a plain number, which is assumed to be a GBIF nubKey ID
+						tmp=GlobalOperations.getSpeciesFromNub(Long.parseLong(tmp));
+						if(tmp==null) continue; else tmp=tmp.toLowerCase();
+						for(int i1=0;i1<this.size();i1++) {
+							if(this.get(i1).toLowerCase().equals(tmp)) {
+								out.add(i1);
+								break;
+							}
 						}
-					}
-				} else {			// query is assumed to be a canonical species name; any string can go here, if it does not match, it is silently ignored.
-					// TODO better parse species names, perhaps use GBIF services
-					tmp=tmp.replace("+", " ");
-					for(int i1=0;i1<this.size();i1++) {
-						if(this.get(i1).toLowerCase().equals(tmp)) {
-							out.add(i1);
-							break;
+					} else {			// query is assumed to be a canonical species name; any string can go here, if it does not match, it is silently ignored.
+						// TODO better parse species names, perhaps use GBIF services
+						tmp=tmp.replace("+", " ");
+						for(int i1=0;i1<this.size();i1++) {
+							if(this.get(i1).toLowerCase().equals(tmp)) {
+								out.add(i1);
+								break;
+							}
 						}
 					}
 				}

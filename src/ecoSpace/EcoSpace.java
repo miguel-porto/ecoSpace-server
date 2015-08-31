@@ -24,7 +24,7 @@ public class EcoSpace {
 			outputlog=System.out;
 		}
 		
-		//StartServer();
+		StartServer();
 
 		/*
 		to convert WorldClim to TIF
