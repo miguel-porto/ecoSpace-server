@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include <omp.h>
 #include "tiff-4.0.3/libtiff/tiffio.h"
 #include "econav.h"
 
@@ -67,19 +68,23 @@ JNIEXPORT jlong JNICALL Java_ecoSpace_nativeFunctions_computeDistanceMatrix(JNIE
 			continue;
 		}
 		for(k=0;k<arraysize;k++) tmp1[k]=(float)densities[i].density[k]*densities[i].max/((float)MAXDENSITY*densities[i].sum);
-		for(j=i;j<ntaxa;j++) {
-			if(densities[j].max<0 || IDs[j]==-1) {	// if this taxon has no kernel density (because of NAs)
-				distances[i+j*ntaxa]=NA_DISTANCE;
-				continue;
+		#pragma omp parallel private(j,v,k,pd2,tmp2)
+		{
+			#pragma omp for
+			for(j=i;j<ntaxa;j++) {
+				if(densities[j].max<0 || IDs[j]==-1) {	// if this taxon has no kernel density (because of NAs)
+					distances[i+j*ntaxa]=NA_DISTANCE;
+					continue;
+				}
+				v=0;
+				for(k=0,pd2=densities[j].density;k<arraysize;k++,pd2++) {
+					tmp2=(float)(*pd2)*densities[j].max/((float)MAXDENSITY*densities[j].sum);
+					v+=(tmp1[k]<tmp2 ? tmp1[k] : tmp2);			
+				}
+				distances[i+j*ntaxa]=(unsigned char)((1-v)*MAXDISTANCE);
+				#pragma omp atomic
+				counter++;
 			}
-			v=0;
-			for(k=0,pd2=densities[j].density;k<arraysize;k++,pd2++) {
-				tmp2=(float)(*pd2)*densities[j].max/((float)MAXDENSITY*densities[j].sum);
-				v+=(tmp1[k]<tmp2 ? tmp1[k] : tmp2);			
-			}
-			distances[i+j*ntaxa]=(unsigned char)((1-v)*MAXDISTANCE);
-			counter++;
-//			distances[i+j*ntaxa]=(unsigned char)44;
 		}
 //		printf("Taxon %d\n",i);fflush(stdout);
 		*progress=(int)(((float)counter / (ntaxa*(ntaxa+1)/2))*1000);

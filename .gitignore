@@ -19,4 +19,5 @@ data/
 *.bak
 jni/gbif_account.txt
 logfile.txt
+datasets.xml
 
