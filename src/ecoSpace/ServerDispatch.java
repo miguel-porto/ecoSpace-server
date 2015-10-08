@@ -297,15 +297,15 @@ public class ServerDispatch implements Runnable{
     			break;
     			
     		case "adddataset":
-    			String authkey=getQSValue("auth",qs);
+/*    			String authkey=getQSValue("auth",qs);
     			if(authkey==null) {out.println(error("You have to provide an authorization key as the parameter auth"));break;}
     			if(!GlobalOperations.checkAuthorizationKey(authkey)) {out.println(error("Invalid authorization key. Contact administrator to request a key."));break;}
-    			
+    			*/
     			if(path.length<3) {out.println(error("What type of dataset? dwc | gbif | gbifkey"));break;}
     			switch(path[2]) {
     			case "local":	// for debugging!
     				OccurrenceInterface occ=new OccurrenceInterface("Debug",null);
-    				occ.SetProperties("/home/miguel/workspace/ecoSpace/jni/5b010b");
+    				occ.SetProperties("/home/miguel/Downloads/SoricidaeGBIF.dwc");
         			ds=new Dataset(occ);
         			datasetServer.datasets.put(ds.dID, ds);
         			out.println(ds.dID);
@@ -419,7 +419,7 @@ public class ServerDispatch implements Runnable{
 				bwsp.close();
 				// convert the text files into an Rdata file
 				try {
-					Process pr=Runtime.getRuntime().exec(new String[] {"R", "-e","a=read.table('"+spfile+"',sep='\\t',strings=F)[,1]; b=1-as.matrix(read.table('"+distmat+"' ,h=F,sep='\\t'))/254; colnames(b)=a; rownames(b)=a; distances=as.dist(b); save(distances,file='"+rdatafile+"')"});
+					Process pr=Runtime.getRuntime().exec(new String[] {"R", "-e","a=read.table('"+spfile+"',sep='\\t',strings=F)[,1]; b=as.matrix(read.table('"+distmat+"' ,h=F,sep='\\t'))/254; colnames(b)=a; rownames(b)=a; distances=as.dist(b); save(distances,file='"+rdatafile+"')"});
 					pr.waitFor();
 				} catch (IOException | InterruptedException e) {
 					datasetServer.popDistanceDownload();

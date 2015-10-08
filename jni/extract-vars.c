@@ -19,7 +19,7 @@ JNIEXPORT jint JNICALL Java_ecoSpace_nativeFunctions_readVariablesFromCoords(JNI
 	it also computes a weight for each record based on the geographic coordinates
 */
 	const char *dID=(*env)->GetStringUTFChars(env, _dID , NULL );
-	int i,j, sum = 0,nfiles;
+	int i,j,nfiles;
 	unsigned int line,pos;
 	float minlat=10000,minlng=10000,maxlat=-10000,maxlng=-10000,ranlat,ranlng,factor,range;
 	FILE *outfile,*outstd;
@@ -33,13 +33,15 @@ JNIEXPORT jint JNICALL Java_ecoSpace_nativeFunctions_readVariablesFromCoords(JNI
 	jfloat *plng = (*env)->GetFloatArrayElements(env, lng, 0);
 	jint *pIDs= (*env)->GetIntArrayElements(env, IDs, 0);
 	
+	nfiles=readTiffFiles("tiff/",tiffiles,variables);
+	if(!nfiles) return 0;
+
 	tmpv=malloc(nrecs*sizeof(VARIABLE));
 	stdlat=malloc(nrecs*sizeof(VARIABLE));
 	stdlng=malloc(nrecs*sizeof(VARIABLE));
 	memset(tiffiles,0,sizeof(TIFFGEOREF)*MAXVARIABLES);
 	memset(variables,0,sizeof(VARIABLEHEADER)*MAXVARIABLES);
 	
-	nfiles=readTiffFiles("tiff/",tiffiles,variables);
 	for(i=0;i<MAXVARIABLES;i++) {
 		variables[i].min=1000000;
 		variables[i].max=-1000000;
@@ -219,6 +221,6 @@ JNIEXPORT jint JNICALL Java_ecoSpace_nativeFunctions_readVariablesFromCoords(JNI
 	free(stdlat);
 	free(stdlng);
 	TIFFSetWarningHandler(tifferror);
-	return(sum);
+	return 1 ;
 }
 
